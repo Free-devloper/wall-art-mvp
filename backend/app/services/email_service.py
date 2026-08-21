@@ -5,6 +5,7 @@ from app.models.order import Order
 
 logger = logging.getLogger(__name__)
 
+
 class EmailService:
     @classmethod
     async def send_email(cls, to_email: str, subject: str, html: str) -> bool:
@@ -13,18 +14,13 @@ class EmailService:
         if not api_key or api_key.startswith("re_") or "placeholder" in api_key:
             logger.info(f"[EMAIL MOCK] To: {to_email} | Subject: {subject} | HTML length: {len(html)}")
             return True
-            
+
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     "https://api.resend.com/emails",
                     headers={"Authorization": f"Bearer {api_key}"},
-                    json={
-                        "from": from_email,
-                        "to": [to_email],
-                        "subject": subject,
-                        "html": html
-                    }
+                    json={"from": from_email, "to": [to_email], "subject": subject, "html": html},
                 )
                 response.raise_for_status()
                 return True

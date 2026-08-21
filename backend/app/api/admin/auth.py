@@ -8,16 +8,18 @@ from app.auth.auth import verify_password, create_access_token, get_current_admi
 
 router = APIRouter()
 
+
 @router.post("/login", response_model=AdminLoginResponse)
 async def login(req: AdminLoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(AdminUser).where(AdminUser.email == req.email))
     user = result.scalar_one_or_none()
-    
+
     if not user or not verify_password(req.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-        
+
     token = create_access_token(data={"sub": user.email, "role": user.role})
     return AdminLoginResponse(token=token)
+
 
 @router.get("/me")
 async def get_me(admin: AdminUser = Depends(get_current_admin)):

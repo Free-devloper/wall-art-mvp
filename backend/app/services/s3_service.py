@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class LocalStorageService:
     """On-server filesystem storage for development.
-    
+
     Stores files under LOCAL_STORAGE_DIR with subdirectories for
     uploads and generations. Serves files via the backend's
     /files/ static route.
@@ -35,7 +35,7 @@ class LocalStorageService:
 
     def generate_presigned_upload_url(self, key: str, content_type: str, max_size_bytes: int) -> dict:
         """Return a local upload endpoint URL.
-        
+
         In local dev mode the frontend POSTs the file to
         /api/local-storage/upload with the key as a form field.
         """
@@ -84,11 +84,7 @@ class LocalStorageService:
         base = self._resolve_path(prefix)
         if not base.exists():
             return []
-        return [
-            str(p.relative_to(self.base_dir)).replace("\\", "/")
-            for p in base.rglob("*")
-            if p.is_file()
-        ]
+        return [str(p.relative_to(self.base_dir)).replace("\\", "/") for p in base.rglob("*") if p.is_file()]
 
 
 class S3StorageService:

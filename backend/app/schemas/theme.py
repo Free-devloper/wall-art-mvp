@@ -2,6 +2,7 @@ from pydantic import BaseModel, UUID4
 from typing import Optional
 from datetime import datetime
 
+
 class ThemeBase(BaseModel):
     name: str
     description: str
@@ -12,8 +13,10 @@ class ThemeBase(BaseModel):
     price_cents: int
     max_regenerations: int = 3
 
+
 class ThemeCreate(ThemeBase):
     pass
+
 
 class ThemeUpdate(BaseModel):
     name: Optional[str] = None
@@ -25,10 +28,11 @@ class ThemeUpdate(BaseModel):
     price_cents: Optional[int] = None
     max_regenerations: Optional[int] = None
 
+
 class ThemeResponse(ThemeBase):
     id: UUID4
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True

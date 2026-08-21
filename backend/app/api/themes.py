@@ -8,10 +8,11 @@ from app.schemas.theme import ThemeResponse
 
 router = APIRouter()
 
+
 @router.get("", response_model=List[ThemeResponse])
 async def list_active_themes(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Theme).where(Theme.active == True).order_by(Theme.sort_order)
+        select(Theme).where(Theme.active.is_(True)).order_by(Theme.sort_order)
     )
     themes = result.scalars().all()
     return themes

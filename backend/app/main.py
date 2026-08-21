@@ -38,14 +38,14 @@ app = FastAPI(
 
 from fastapi.responses import JSONResponse
 
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     import traceback
+
     logger.error(f"Unhandled error: {exc}\n{traceback.format_exc()}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": "Internal server error", "type": type(exc).__name__}
-    )
+    return JSONResponse(status_code=500, content={"detail": "Internal server error", "type": type(exc).__name__})
+
 
 # --- Middleware ---
 app.add_middleware(
@@ -92,9 +92,7 @@ async def startup_event():
 
     # Create default admin user if it doesn't exist
     async with AsyncSessionLocal() as db:
-        result = await db.execute(
-            select(AdminUser).where(AdminUser.email == settings.ADMIN_DEFAULT_EMAIL)
-        )
+        result = await db.execute(select(AdminUser).where(AdminUser.email == settings.ADMIN_DEFAULT_EMAIL))
         admin = result.scalar_one_or_none()
         if not admin:
             new_admin = AdminUser(
@@ -109,6 +107,7 @@ async def startup_event():
     # Auto-seed themes in dev mode so the gallery isn't empty
     if settings.APP_ENV == "development":
         from app.seed_themes import seed as seed_themes
+
         await seed_themes()
 
 
@@ -119,4 +118,3 @@ async def health_check():
         "environment": settings.APP_ENV,
         "storage_mode": settings.STORAGE_MODE,
     }
-

@@ -24,9 +24,7 @@ def hash_password(password: str) -> str:
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its bcrypt hash."""
-    return bcrypt.checkpw(
-        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
-    )
+    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
 def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None) -> str:
@@ -52,9 +50,7 @@ def verify_token(token: str) -> dict:
         )
 
 
-async def get_current_admin(
-    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
-) -> AdminUser:
+async def get_current_admin(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> AdminUser:
     payload = verify_token(token)
     email: str = payload.get("sub")
     if email is None:

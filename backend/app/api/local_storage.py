@@ -25,7 +25,7 @@ async def local_upload(
     key: str = Form(...),
 ):
     """Accept a file upload and store it locally under the given key.
-    
+
     The frontend sends the file here instead of to an S3 presigned URL
     when running in local dev mode.
     """
@@ -47,7 +47,7 @@ async def local_upload(
 @router.get("/files/{file_path:path}")
 async def local_download(file_path: str):
     """Serve a file from local storage.
-    
+
     This replaces S3 presigned download URLs in local dev mode.
     """
     if not settings.use_local_storage:

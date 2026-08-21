@@ -1,4 +1,5 @@
 """Clerk JWT verification for customer-facing authentication."""
+
 import jwt
 import httpx
 import logging
@@ -36,16 +37,16 @@ def _decode_clerk_token(token: str) -> dict:
         # Get the signing key from JWKS
         unverified_header = jwt.get_unverified_header(token)
         kid = unverified_header.get("kid")
-        
+
         rsa_key = None
         for key in jwks.get("keys", []):
             if key["kid"] == kid:
                 rsa_key = jwt.algorithms.RSAAlgorithm.from_jwk(key)
                 break
-        
+
         if not rsa_key:
             raise HTTPException(status_code=401, detail="Invalid token signing key")
-        
+
         payload = jwt.decode(
             token,
             rsa_key,
@@ -61,6 +62,7 @@ def _decode_clerk_token(token: str) -> dict:
 
 class ClerkUser:
     """Represents an authenticated Clerk user."""
+
     def __init__(self, user_id: str, email: Optional[str] = None, name: Optional[str] = None):
         self.user_id = user_id
         self.email = email
@@ -73,15 +75,11 @@ async def get_clerk_user(
     """FastAPI dependency: require a valid Clerk session token."""
     if not credentials:
         raise HTTPException(status_code=401, detail="Authentication required")
-    
+
     # In dev mode with placeholder key, accept any bearer token and return a mock user
     if settings.CLERK_SECRET_KEY == "sk_test_placeholder":
-        return ClerkUser(
-            user_id="dev_user_001",
-            email="dev@example.com",
-            name="Dev User"
-        )
-    
+        return ClerkUser(user_id="dev_user_001", email="dev@example.com", name="Dev User")
+
     payload = _decode_clerk_token(credentials.credentials)
     return ClerkUser(
         user_id=payload.get("sub", ""),

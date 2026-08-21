@@ -38,9 +38,7 @@ async def async_run_pipeline(generation_id: str):
 
     async with AsyncSessionLocal() as db:
         # --- Stage 1: Load records ---
-        gen = await db.scalar(
-            select(Generation).where(Generation.id == uuid.UUID(generation_id))
-        )
+        gen = await db.scalar(select(Generation).where(Generation.id == uuid.UUID(generation_id)))
         if not gen:
             logger.error(f"Generation {generation_id} not found")
             return
@@ -60,13 +58,11 @@ async def async_run_pipeline(generation_id: str):
                 original_bytes = storage_service.download_bytes(upload.s3_key_original)
                 original_image = Image.open(io.BytesIO(original_bytes))
                 logger.info(
-                    f"Downloaded original: {upload.s3_key_original} "
-                    f"({original_image.size[0]}x{original_image.size[1]})"
+                    f"Downloaded original: {upload.s3_key_original} ({original_image.size[0]}x{original_image.size[1]})"
                 )
             except FileNotFoundError:
                 logger.warning(
-                    f"Original file not found at {upload.s3_key_original}, "
-                    "creating placeholder image for dev"
+                    f"Original file not found at {upload.s3_key_original}, creating placeholder image for dev"
                 )
                 original_image = Image.new("RGB", (1024, 1024), color=(200, 200, 220))
 
@@ -142,10 +138,11 @@ async def async_run_pipeline(generation_id: str):
             CircuitBreaker.record_spend(cost)
 
             await db.commit()
-            
+
             # Send generation complete email
             try:
                 from app.services.email_service import EmailService
+
                 order_result = await db.execute(select(Order).where(Order.id == gen.order_id))
                 order = order_result.scalar_one_or_none()
                 if order and order.customer_email:
@@ -154,10 +151,7 @@ async def async_run_pipeline(generation_id: str):
             except Exception as email_err:
                 logger.warning(f"Failed to send generation complete email: {email_err}")
 
-            logger.info(
-                f"Generation {generation_id} completed in {gen.generation_time_ms}ms "
-                f"(cost=${cost:.2f})"
-            )
+            logger.info(f"Generation {generation_id} completed in {gen.generation_time_ms}ms (cost=${cost:.2f})")
 
         except Exception as e:
             logger.error(f"Generation pipeline failed for {generation_id}: {e}", exc_info=True)
@@ -166,9 +160,7 @@ async def async_run_pipeline(generation_id: str):
             await db.commit()
 
 
-def _create_dev_placeholder(
-    original: Image.Image, theme, gen
-) -> Image.Image:
+def _create_dev_placeholder(original: Image.Image, theme, gen) -> Image.Image:
     """Create a styled placeholder image for dev/testing without calling AI."""
     img = Image.new("RGB", (1024, 1024), color=(45, 55, 72))
     draw = ImageDraw.Draw(img)

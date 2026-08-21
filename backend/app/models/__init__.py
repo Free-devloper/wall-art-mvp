@@ -7,7 +7,4 @@ from .theme import Theme
 from .audit_log import AuditLog
 from .regeneration_log import RegenerationLog
 
-__all__ = [
-    "User", "AdminUser", "Order", "Upload", "Generation",
-    "Theme", "AuditLog", "RegenerationLog"
-]
+__all__ = ["User", "AdminUser", "Order", "Upload", "Generation", "Theme", "AuditLog", "RegenerationLog"]
