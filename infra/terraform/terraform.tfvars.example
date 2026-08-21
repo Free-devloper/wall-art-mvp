@@ -1,0 +1,8 @@
+aws_region           = "eu-west-2"
+environment          = "staging"
+aws_account_id       = "123456789012"
+db_username          = "wallart_admin"
+db_password          = "super_secret_db_password_123"
+replicate_api_token  = "r8_example_token_abcdef1234567890"
+cors_allowed_origins = ["https://staging.wallart.com", "http://localhost:3000"]
+domain_name          = "wallart.com"

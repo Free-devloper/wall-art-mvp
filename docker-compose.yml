@@ -1,0 +1,129 @@
+services:
+  # --- PostgreSQL ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: wallart-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-wallart}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wallart_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-wallart}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wallart}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # --- Redis ---
+  redis:
+    image: redis:7-alpine
+    container_name: wallart-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # --- Backend API (hot-reload via uvicorn --reload) ---
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: wallart-backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./backend/app:/app/app          # Mount only source code (hot-reload)
+      - local_storage:/app/local_storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --- Celery Worker (hot-reload via watchfiles) ---
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: wallart-celery-worker
+    command: >
+      watchfiles
+        --filter python
+        'celery -A app.workers.celery_app worker --loglevel=info --concurrency=2'
+        /app/app
+    env_file:
+      - .env
+    volumes:
+      - ./backend/app:/app/app
+      - local_storage:/app/local_storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --- Celery Beat (Scheduled Tasks) ---
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: wallart-celery-beat
+    command: celery -A app.workers.celery_app beat --loglevel=info
+    env_file:
+      - .env
+    volumes:
+      - ./backend/app:/app/app
+      - local_storage:/app/local_storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --- Frontend (Vite dev server with HMR) ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: wallart-frontend
+    command: npm run dev -- --host 0.0.0.0
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app              # Mount full source for HMR
+      - /app/node_modules            # Preserve container's node_modules
+    environment:
+      - VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY:-pk_test_placeholder}
+      - VITE_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-pk_test_placeholder}
+      - CHOKIDAR_USEPOLLING=true      # Required for file watching on Windows/WSL2
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  local_storage:
+    driver: local
